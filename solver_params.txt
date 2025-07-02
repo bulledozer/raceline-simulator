@@ -1,0 +1,8 @@
+C:/Users/theem/Documents/programs/TIPE python
+C:/Users/theem/Documents/programs/TIPE python/roads/Monza_centerline.csv
+3
+100
+50
+1000
+150
+C:/Users/theem/Documents/programs/raceline-simulator

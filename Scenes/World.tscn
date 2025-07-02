@@ -1,0 +1,110 @@
+[gd_scene load_steps=10 format=3 uid="uid://dqodiwqt8od4m"]
+
+[ext_resource type="Script" uid="uid://dnrqv83xnynwa" path="res://Scripts/PathGenerator.gd" id="1_5cjrv"]
+[ext_resource type="PackedScene" uid="uid://8nclb7rrx3le" path="res://Scenes/Car.tscn" id="1_j0p05"]
+[ext_resource type="Material" uid="uid://b8kh0s7y5h1w1" path="res://roadmat.tres" id="3_5nsto"]
+[ext_resource type="Shader" uid="uid://bon635r3fadr0" path="res://Scripts/loading.gdshader" id="4_gjpho"]
+[ext_resource type="Material" uid="uid://jw4rkda34coc" path="res://linemat.tres" id="4_p70al"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_j0p05"]
+
+[sub_resource type="Sky" id="Sky_5nsto"]
+sky_material = SubResource("ProceduralSkyMaterial_j0p05")
+
+[sub_resource type="Environment" id="Environment_gjpho"]
+background_mode = 2
+sky = SubResource("Sky_5nsto")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_p70al"]
+shader = ExtResource("4_gjpho")
+shader_parameter/dot_scale = 1.157
+shader_parameter/ring_radius = 0.424
+shader_parameter/num_points = 10
+shader_parameter/gap_ratio = 0.028
+shader_parameter/all_dots_same_size = false
+shader_parameter/dot_color_start = Color(1, 1, 1, 1)
+shader_parameter/dot_color_end = Color(1, 0.462391, 0.667557, 1)
+shader_parameter/enable_shadow = false
+shader_parameter/shadow_color = Color(0, 0, 0, 0.5)
+shader_parameter/shadow_offset = Vector2(0.05, -0.05)
+shader_parameter/rotation_speed = 1.809
+shader_parameter/reverse_rotation = false
+shader_parameter/icon_size = 0.3
+shader_parameter/enable_icon_rotation = false
+shader_parameter/reverse_icon_rotation = false
+shader_parameter/icon_rotation_speed = 1.0
+shader_parameter/show_icon = false
+
+[node name="root" type="Node3D"]
+
+[node name="Car" parent="." instance=ExtResource("1_j0p05")]
+
+[node name="path" type="Node3D" parent="." node_paths=PackedStringArray("car")]
+script = ExtResource("1_5cjrv")
+car = NodePath("../Car")
+RES = 5
+WIDTH = 3.0
+loop = true
+show_traj = true
+road_mat = ExtResource("3_5nsto")
+line_mat = ExtResource("4_p70al")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.0390961, 0.703023, 0.710091, 0.475171, -0.612063, 0.632133, 0.879024, 0.362129, -0.310127, -18.7227, 8.33609, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_gjpho")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="UI"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -157.0
+offset_top = -171.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="gen" type="Button" parent="UI/Panel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Generate road"
+
+[node name="solve" type="Button" parent="UI/Panel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Solve"
+
+[node name="Control" type="ColorRect" parent="UI"]
+visible = false
+material = SubResource("ShaderMaterial_p70al")
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -121.0
+offset_right = 120.0
+offset_bottom = -1.0
+grow_vertical = 0
+
+[connection signal="pressed" from="UI/Panel/VBoxContainer/gen" to="path" method="generate_mesh"]
+[connection signal="pressed" from="UI/Panel/VBoxContainer/solve" to="path" method="solve_threaded"]
