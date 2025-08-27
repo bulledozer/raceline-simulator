@@ -37,11 +37,13 @@ shader_parameter/show_icon = false
 
 [node name="root" type="Node3D"]
 
-[node name="Car" parent="." instance=ExtResource("1_j0p05")]
+[node name="Car_S" parent="." instance=ExtResource("1_j0p05")]
 
-[node name="path" type="Node3D" parent="." node_paths=PackedStringArray("car")]
+[node name="Car_D" parent="." instance=ExtResource("1_j0p05")]
+
+[node name="path" type="Node3D" parent="." node_paths=PackedStringArray("cars")]
 script = ExtResource("1_5cjrv")
-car = NodePath("../Car")
+cars = [NodePath("../Car_S"), NodePath("../Car_D")]
 RES = 5
 WIDTH = 3.0
 loop = true
@@ -94,6 +96,11 @@ layout_mode = 2
 size_flags_vertical = 3
 text = "Solve"
 
+[node name="car" type="Button" parent="UI/Panel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Change car"
+
 [node name="Control" type="ColorRect" parent="UI"]
 visible = false
 material = SubResource("ShaderMaterial_p70al")
@@ -108,3 +115,4 @@ grow_vertical = 0
 
 [connection signal="pressed" from="UI/Panel/VBoxContainer/gen" to="path" method="generate_mesh"]
 [connection signal="pressed" from="UI/Panel/VBoxContainer/solve" to="path" method="solve_threaded"]
+[connection signal="pressed" from="UI/Panel/VBoxContainer/car" to="path" method="change_car"]

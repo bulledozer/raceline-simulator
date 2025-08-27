@@ -1,6 +1,6 @@
 extends Node3D
 
-@export var car: Node3D
+@export var cars: Array[Car]
 
 @export var RES: int
 @export var WIDTH: float
@@ -15,10 +15,23 @@ extends Node3D
 
 var curve: Curve3D
 
+var curr_car: int = 0
+
 func _ready() -> void:
 	curve = Curve3D.new()
 	
 	load_road("C:\\Users\\theem\\Documents\\programs\\TIPE python\\roads\\Monza_centerline.csv")
+
+func _process(delta: float) -> void:
+	for i in range(cars.size()):
+		if i == curr_car:
+			cars[i].is_camera_active = true
+		else:
+			cars[i].is_camera_active = false
+
+func change_car():
+	curr_car += 1
+	curr_car %= cars.size()
 
 func load_road(file_path: String):
 	curve.clear_points()
@@ -92,7 +105,7 @@ func generate_mesh():
 	
 	self.add_child(mesh_instance)
 
-func generate_traj_mesh(traj: Curve3D):
+func generate_traj_mesh(traj: Curve3D, col: Color):
 	var points = traj.tessellate_even_length()
 	
 	var vertices = []
@@ -111,30 +124,28 @@ func generate_traj_mesh(traj: Curve3D):
 	mesh_instance.mesh = mesh
 	mesh_instance.material_overlay = road_mat
 	
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = col
+	
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mesh_instance.material_overlay = line_mat
+	mesh_instance.material_overlay = mat
+	
 	
 	call_deferred("add_child", mesh_instance)
 
-func solve():
-	var output = []
-	OS.execute("CMD.exe", ["/C", "python C:\\Users\\theem\\Documents\\programs\\raceline-simulator\\solver_executer.py"], output)
-	
-	var points_str = output[0].replace('\r','').split('\n')
-	points_str.remove_at(len(points_str)-1)
-	#print(points_str)
+func data_from_str(str):
 	var traj_curve = CatmullRom3D.new()
 	
 	var speed_curve = Curve.new()
-	speed_curve.max_domain = float(points_str[len(points_str)-1].split(',')[1])
+	speed_curve.max_domain = float(str[len(str)-1].split(',')[1])
 	
 	var traj_arr = []
 	var speed_arr = []
 	
 	var traj = true
 	var i = 1
-	while i <= points_str.size()-1:
-		var val = points_str[i].split(',')
+	while i <= str.size()-1:
+		var val = str[i].split(',')
 		i += 1
 		if val[0] == 'speeds':
 			traj = false
@@ -145,25 +156,50 @@ func solve():
 			traj_curve.add_point(Vector3(float(val[0]),0,float(val[1])))
 		else:
 			speed_arr.append(Vector2(float(val[1]), float(val[0])))
-			print(val[1])
 			if float(val[0]) > speed_curve.max_value:
 				speed_curve.max_value = float(val[0])
-	
 	for k in range(traj_arr.size()):
 		traj_curve.cm_add_point(traj_arr[k])
-		#traj_curve.add_point(traj_arr[3*k+1], traj_arr[3*k]-traj_arr[3*k+1], traj_arr[3*k+2]-traj_arr[3*k+1])
-	
+		
 	for k in range(speed_arr.size()):
 		speed_curve.add_point(speed_arr[k])
+		
+	return [traj_curve, speed_curve]
+
+func solve():
+	var output = []
+	OS.execute("CMD.exe", ["/C", "python C:\\Users\\theem\\Documents\\programs\\raceline-simulator\\solver_executer.py"], output)
+	
+	
+	var out = output[0].replace('\r','').split('|')
+	var time_str = out[0].split('\n')
+	var dist_str = out[1].split('\n')
+	
+	print(len(time_str)-len(dist_str))
+	
+	time_str.remove_at(len(time_str)-1)
+	dist_str.remove_at(len(dist_str)-1)
+	#print(points_str)
+	
+	var time_curves = data_from_str(time_str)
+	var dist_curves = data_from_str(dist_str)
+	
+	
+		#traj_curve.add_point(traj_arr[3*k+1], traj_arr[3*k]-traj_arr[3*k+1], traj_arr[3*k+2]-traj_arr[3*k+1])
 	
 	#for k in range(speed_arr.size()):
 		#print(speed_curve.sample((float(k)/speed_arr.size())*speed_curve.max_domain))
 	
-	car.trajectory = traj_curve
-	car.speed_curve = speed_curve
+	cars[0].trajectory = time_curves[0]
+	cars[0].speed_curve = time_curves[1]
+	
+	cars[1].trajectory = dist_curves[0]
+	cars[1].speed_curve = dist_curves[1]
+	
 	
 	if show_traj:
-		generate_traj_mesh(traj_curve)
+		generate_traj_mesh(time_curves[0], Color.RED)
+		generate_traj_mesh(dist_curves[0], Color.BLUE)
 
 func solve_threaded():
 	var thread = Thread.new()

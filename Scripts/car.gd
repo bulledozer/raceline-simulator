@@ -1,3 +1,4 @@
+class_name Car
 extends Node3D
 
 @export var accel: float
@@ -16,9 +17,14 @@ var speed = 0
 
 var time = 0
 
+var is_camera_active = false
+
 @onready var cam_stand = $CamStand
 @onready var speed_label = $UI/Label
 @onready var stream_player = $AudioStreamPlayer3D
+@onready var ui = $UI
+
+@onready var cam = $CamStand/Camera3D
 
 @onready var time_label = $UI/time_label
 
@@ -33,6 +39,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	cam_stand.position = lerp(cam_stand.position, position, cam_follow_speed*delta)
 	cam_stand.rotation.y = lerp_angle(cam_stand.rotation.y, rotation.y, cam_rot_speed*delta)
+	
+	cam.current = is_camera_active
+	ui.visible = is_camera_active
 	
 	speed_label.visible = false
 	stream_player.volume_db = -100
@@ -53,8 +62,15 @@ func _process(delta: float) -> void:
 	
 	stream_player.volume_db = -10
 	
-	speed = speed_curve.sample(s)
 	s += speed*delta
+	
+	var new_pos = trajectory.sample_baked(s)
+	var dir = new_pos-self.position
+	
+	position = new_pos
+	look_at(position + dir)
+	
+	speed = speed_curve.sample(s)
 	
 	time += delta
 	
@@ -63,10 +79,3 @@ func _process(delta: float) -> void:
 	if s > speed_curve.max_domain:
 		s = 0
 		time = 0
-	
-	var new_pos = trajectory.sample_baked(s)
-	var dir = new_pos-self.position
-	
-	position = trajectory.sample_baked(s)
-	look_at(position + dir)
-	
